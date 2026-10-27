@@ -1,0 +1,137 @@
+# ==========================================
+# Cloud-Native AI Agri Marketplace .gitignore
+# ==========================================
+
+# ------------------------------------------
+# Environment & Secrets (Crucial: Never commit)
+# ------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.cert
+*.crt
+
+# ------------------------------------------
+# Node.js / React (Frontend)
+# ------------------------------------------
+frontend/node_modules/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+frontend/build/
+frontend/dist/
+frontend/.next/
+frontend/out/
+.npm
+.eslintcache
+
+# ------------------------------------------
+# Java / Maven (Backend / Spring Boot)
+# ------------------------------------------
+backend/target/
+target/
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+.mvn/timing.properties
+.flattened-pom.xml
+
+# ------------------------------------------
+# Python (AI Service)
+# ------------------------------------------
+ai-service/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+ai-service/venv/
+ai-service/.venv/
+venv/
+.venv/
+env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ------------------------------------------
+# Docker & Containers
+# ------------------------------------------
+.docker/
+docker-compose.override.yml
+*.docker.log
+
+# ------------------------------------------
+# IDEs & Editors
+# ------------------------------------------
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.built-jar-path
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Scratch & Logs
+*.log
+scratch/
+.tmp/
+tmp/
