@@ -1,0 +1,117 @@
+# Cloud-Native AI Agri Marketplace - Testing & Running Guide
+
+================================================================================
+1. APPLICATION OVERVIEW
+================================================================================
+The application consists of four tiers:
+- Frontend:   React 18 + Vite (Port 5173 locally / Port 3000 via Docker)
+- Backend:    Spring Boot 3 + Java 21 (Port 8080)
+- AI Service: Python FastAPI + Scikit-learn (Port 8000)
+- Database:   MySQL 8.0 (Port 3306 internal / Port 3307 host)
+
+
+================================================================================
+2. HOW TO RUN AUTOMATED TESTS
+================================================================================
+
+A. Frontend Tests (Vitest & RTL)
+--------------------------------
+cd frontend
+npm test -- --run
+
+To test production build:
+npm run build
+
+
+B. AI Service Tests (Pytest)
+----------------------------
+cd ai-service
+python -m pytest
+
+
+C. Backend API Tests (Spring Boot & JUnit)
+------------------------------------------
+cd backend
+mvn clean test
+
+
+D. Deployment Manifest Validations (Helm & K8s)
+-----------------------------------------------
+helm lint deployment/helm/agri-marketplace
+helm template test-rel deployment/helm/agri-marketplace -f deployment/helm/agri-marketplace/values-local.yaml
+kubectl kustomize deployment/k8s
+
+
+================================================================================
+3. HOW TO RUN THE APPLICATION
+================================================================================
+
+--------------------------------------------------------------------------------
+OPTION A: Using Docker Compose (Recommended & Simplest)
+--------------------------------------------------------------------------------
+Open PowerShell in the project root (c:\Users\srira\Desktop\3-1\CNAD\agri):
+
+1. Copy environment template (if not already done):
+   Copy-Item .env.example .env
+
+2. Launch all services with build:
+   docker compose --env-file .env up --build -d
+
+3. Verify running containers:
+   docker compose ps
+
+4. Access endpoints:
+   - Frontend:         http://localhost:3030
+   - Backend Actuator: http://localhost:8080/actuator/health
+   - AI Service:       http://localhost:8001/health
+
+5. To stop all services:
+   docker compose down
+
+
+--------------------------------------------------------------------------------
+OPTION B: Running Locally (Separate PowerShell Terminals)
+--------------------------------------------------------------------------------
+
+TERMINAL 1: AI Service
+  cd C:\Users\srira\Desktop\3-1\CNAD\agri\ai-service
+  python -m pip install -r requirements.txt
+  python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+TERMINAL 2: Backend (Requires local MySQL running on port 3306)
+  cd C:\Users\srira\Desktop\3-1\CNAD\agri\backend
+  $env:DB_USERNAME = "root"
+  $env:DB_PASSWORD = "<YOUR_MYSQL_PASSWORD>"
+  $env:AI_SERVICE_URL = "http://localhost:8000"
+  mvn spring-boot:run
+
+TERMINAL 3: Frontend
+  cd C:\Users\srira\Desktop\3-1\CNAD\agri\frontend
+  npm install
+  npm run dev
+
+  Open http://localhost:5173 in your browser.
+
+
+================================================================================
+4. WHAT TO TEST MANUALLY IN THE APPLICATION
+================================================================================
+
+1. Multilingual Support:
+   - Switch language between English, Telugu (తెలుగు), and Hindi (हिंदी).
+   - Ensure the selection persists across reloads via localStorage without clearing the cart.
+   - Verify Indian currency formatting (₹).
+
+2. Authentication & Roles:
+   - Register/login as CUSTOMER and FARMER roles.
+   - Test session management (HttpOnly cookie) and CSRF header validation.
+
+3. Marketplace & Order Checkout:
+   - Browse crop catalog with filters and search.
+   - Add crops to shopping cart and change quantities.
+   - Complete checkout and verify atomic pessimistic inventory decrementing.
+
+4. Farmer Dashboard & AI Insights:
+   - Login as FARMER and list a crop.
+   - Check demand forecasting charts, persistence baselines, dynamic price recommendations, and profit margin intelligence.
+

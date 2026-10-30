@@ -1,0 +1,133 @@
+# ==============================================================================
+# Cloud-Native AI Agri Marketplace - Docker Compose Architecture
+# ==============================================================================
+# Services:
+#   1. mysql        - Relational database with persistent volume and health check
+#   2. ai-service   - FastAPI machine learning microservice for forecasting & pricing
+#   3. backend      - Spring Boot 3.5.9 application with Actuator telemetry
+#   4. frontend     - React 18 production build served through Nginx reverse proxy
+# ==============================================================================
+
+name: agri-marketplace
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. MySQL 8 Database Service
+  # ----------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: agri-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-agri_marketplace}
+      MYSQL_USER: ${DB_USERNAME:-agri_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD must be set in .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Bound to loopback interface only to prevent public exposure
+    ports:
+      - "127.0.0.1:3307:3306"
+    networks:
+      - agri-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ----------------------------------------------------------------------------
+  # 2. AI Forecasting & Pricing Microservice (Python 3.11 / FastAPI)
+  # ----------------------------------------------------------------------------
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    image: agri-marketplace/ai-service:latest
+    container_name: agri-ai-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${AI_SERVICE_HOST_PORT:-8001}:8000"
+    networks:
+      - agri-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 3. Spring Boot Backend Microservice (Java 21)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: agri-marketplace/backend:latest
+    container_name: agri-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${DB_NAME:-agri_marketplace}?createDatabaseIfNotExist=false&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-agri_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      AI_SERVICE_URL: http://ai-service:8000
+      AI_SERVICE_CONNECT_TIMEOUT_MS: ${AI_SERVICE_CONNECT_TIMEOUT_MS:-5000}
+      AI_SERVICE_READ_TIMEOUT_MS: ${AI_SERVICE_READ_TIMEOUT_MS:-5000}
+      SERVER_PORT: 8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - agri-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 35s
+
+  # ----------------------------------------------------------------------------
+  # 4. React 18 Frontend + Nginx Reverse Proxy
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: agri-marketplace/frontend:latest
+    container_name: agri-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3030}:80"
+    networks:
+      - agri-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# ------------------------------------------------------------------------------
+# Persistent Storage Volumes
+# ------------------------------------------------------------------------------
+volumes:
+  mysql_data:
+    driver: local
+
+# ------------------------------------------------------------------------------
+# Isolated Internal Network
+# ------------------------------------------------------------------------------
+networks:
+  agri-network:
+    driver: bridge

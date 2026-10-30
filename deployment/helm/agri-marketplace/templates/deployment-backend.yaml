@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-backend
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-backend
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-backend
+  template:
+    metadata:
+      labels:
+        {{- include "agri-marketplace.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-backend
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "agri-marketplace.fullname" . }}-backend-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mysql.auth.existingSecret | default (printf "%s-secrets" (include "agri-marketplace.fullname" .)) }}
+                  key: DB_PASSWORD
+          ports:
+            - containerPort: {{ .Values.backend.service.port }}
+              name: http
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.liveness.path }}
+              port: {{ .Values.backend.service.port }}
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 4
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.readiness.path }}
+              port: {{ .Values.backend.service.port }}
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3

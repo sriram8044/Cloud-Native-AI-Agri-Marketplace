@@ -1,0 +1,18 @@
+{{- if and .Values.mysql.enabled .Values.mysql.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-mysql-pvc
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  accessModes:
+    - {{ .Values.mysql.persistence.accessMode }}
+  {{- if .Values.mysql.persistence.storageClass }}
+  storageClassName: {{ .Values.mysql.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.mysql.persistence.size }}
+{{- end }}

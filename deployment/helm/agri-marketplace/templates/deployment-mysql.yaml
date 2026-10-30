@@ -1,0 +1,79 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-mysql
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-mysql
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-mysql
+  template:
+    metadata:
+      labels:
+        {{- include "agri-marketplace.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-mysql
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+        - name: mysql
+          image: "{{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}"
+          imagePullPolicy: {{ .Values.mysql.image.pullPolicy }}
+          env:
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.auth.database | quote }}
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.auth.username | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mysql.auth.existingSecret | default (printf "%s-secrets" (include "agri-marketplace.fullname" .)) }}
+                  key: DB_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mysql.auth.existingSecret | default (printf "%s-secrets" (include "agri-marketplace.fullname" .)) }}
+                  key: DB_ROOT_PASSWORD
+          ports:
+            - containerPort: {{ .Values.mysql.service.port }}
+              name: mysql
+          resources:
+            {{- toYaml .Values.mysql.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - "/bin/sh"
+                - "-c"
+                - "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD}"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - "/bin/sh"
+                - "-c"
+                - "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD}"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          {{- if .Values.mysql.persistence.enabled }}
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          {{- end }}
+      {{- if .Values.mysql.persistence.enabled }}
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: {{ include "agri-marketplace.fullname" . }}-mysql-pvc
+      {{- end }}
+{{- end }}

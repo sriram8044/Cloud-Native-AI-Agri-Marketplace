@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-ai
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-ai
+    app.kubernetes.io/component: ai-service
+spec:
+  replicas: {{ .Values.aiService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-ai
+  template:
+    metadata:
+      labels:
+        {{- include "agri-marketplace.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-ai
+        app.kubernetes.io/component: ai-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: ai-service
+          image: "{{ .Values.aiService.image.repository }}:{{ .Values.aiService.image.tag }}"
+          imagePullPolicy: {{ .Values.aiService.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.aiService.service.port }}
+              name: http
+          resources:
+            {{- toYaml .Values.aiService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.aiService.probes.liveness.path }}
+              port: {{ .Values.aiService.service.port }}
+            initialDelaySeconds: {{ .Values.aiService.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.aiService.probes.liveness.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.aiService.probes.readiness.path }}
+              port: {{ .Values.aiService.service.port }}
+            initialDelaySeconds: {{ .Values.aiService.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.aiService.probes.readiness.periodSeconds }}
+            timeoutSeconds: 3
+            failureThreshold: 2

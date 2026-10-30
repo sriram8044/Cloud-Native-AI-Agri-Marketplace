@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-ai
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-ai
+    app.kubernetes.io/component: ai-service
+spec:
+  type: {{ .Values.aiService.service.type }}
+  ports:
+    - port: {{ .Values.aiService.service.port }}
+      targetPort: 8000
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-ai

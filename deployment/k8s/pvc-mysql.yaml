@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: agri-marketplace
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: agri-marketplace
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

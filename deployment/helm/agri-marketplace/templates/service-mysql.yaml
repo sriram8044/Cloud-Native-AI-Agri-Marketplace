@@ -1,0 +1,18 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-mysql
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-mysql
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.mysql.service.port }}
+      targetPort: 3306
+      name: mysql
+  selector:
+    app.kubernetes.io/name: {{ include "agri-marketplace.name" . }}-mysql
+{{- end }}

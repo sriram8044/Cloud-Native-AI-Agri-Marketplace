@@ -1,0 +1,39 @@
+# ==============================================================================
+# Local Minikube Demonstration Values - Cloud-Native AI Agri Marketplace
+# ==============================================================================
+
+global:
+  environment: local-minikube
+
+mysql:
+  image:
+    pullPolicy: IfNotPresent
+  auth:
+    database: agri_marketplace
+    username: agri_user
+    password: "DemoUserPassword123!"
+    rootPassword: "DemoRootPassword123!"
+
+aiService:
+  image:
+    repository: agri-marketplace/ai-service
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+backend:
+  image:
+    repository: agri-marketplace/backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  env:
+    jpaDdlAuto: update
+    jpaShowSql: false
+
+frontend:
+  image:
+    repository: agri-marketplace/frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    nodePort: 30080

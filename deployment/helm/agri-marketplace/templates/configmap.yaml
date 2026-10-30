@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agri-marketplace.fullname" . }}-backend-config
+  labels:
+    {{- include "agri-marketplace.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  DB_URL: "jdbc:mysql://{{ include "agri-marketplace.fullname" . }}-mysql:3306/{{ .Values.mysql.auth.database }}?createDatabaseIfNotExist=false&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+  DB_USERNAME: {{ .Values.mysql.auth.username | quote }}
+  JPA_DDL_AUTO: {{ .Values.backend.env.jpaDdlAuto | quote }}
+  JPA_SHOW_SQL: {{ .Values.backend.env.jpaShowSql | quote }}
+  AI_SERVICE_URL: "http://{{ include "agri-marketplace.fullname" . }}-ai:8000"
+  AI_SERVICE_CONNECT_TIMEOUT_MS: {{ .Values.backend.env.connectTimeoutMs | quote }}
+  AI_SERVICE_READ_TIMEOUT_MS: {{ .Values.backend.env.readTimeoutMs | quote }}
+  SERVER_PORT: "8080"

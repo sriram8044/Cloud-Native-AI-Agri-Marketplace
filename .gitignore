@@ -8,6 +8,8 @@
 .env
 .env.*
 !.env.example
+secrets.yaml
+!secrets.yaml.example
 *.local
 *.pem
 *.key
