@@ -20,8 +20,7 @@ jobs:
   publish-images:
     name: Build & Publish Production Images
     runs-on: ubuntu-latest
-    # Secure Guardrail: Only execute push if credentials are configured
-    if: "${{ (secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '') || inputs.publish_images == true }}"
+    if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/v') && secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '') }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
