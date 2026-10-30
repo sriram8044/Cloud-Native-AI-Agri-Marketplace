@@ -27,7 +27,7 @@ jobs:
 
       - name: Run Backend Tests
         working-directory: ./backend
-        run: mvn clean test -B
+        run: mvn clean test -B -Dspring.profiles.active=test
 
   # ----------------------------------------------------------------------------
   # Job 2: AI Forecasting Microservice Tests (Python 3.11 / Pytest)
